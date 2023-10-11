@@ -1,0 +1,20 @@
+DXC shader command line compilation
+-----------------------------------
+
+dxc ComputeShaderAOBlurHorz.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderAOBlurHorz -Fd Shaders\PDB\ComputeShaderAOBlurHorz.pdb -Fh Shaders\ComputeShaderAOBlurHorz.hlsl.h
+dxc ComputeShaderAOBlurVert.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderAOBlurVert -Fd Shaders\PDB\ComputeShaderAOBlurVert.pdb -Fh Shaders\ComputeShaderAOBlurVert.hlsl.h
+dxc ComputeShaderFinalPostProcess.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderFinalPostProcess -Fd Shaders\PDB\ComputeShaderFinalPostProcess.pdb -Fh Shaders\ComputeShaderFinalPostProcess.hlsl.h
+dxc ComputeShaderShadowBlurHorz.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderShadowBlurHorz -Fd Shaders\PDB\ComputeShaderShadowBlurHorz.pdb -Fh Shaders\ComputeShaderShadowBlurHorz.hlsl.h
+dxc ComputeShaderShadowBlurVert.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderShadowBlurVert -Fd Shaders\PDB\ComputeShaderShadowBlurVert.pdb -Fh Shaders\ComputeShaderShadowBlurVert.hlsl.h
+dxc ComputeShaderSkinning.hlsl -E main -T cs_6_7 -Zi -Vn g_ComputeShaderSkinning -Fd Shaders\PDB\ComputeShaderSkinning.pdb -Fh Shaders\ComputeShaderSkinning.hlsl.h
+dxc PixelShaderCubes.hlsl -E main -T ps_6_7 -Zi -Vn g_PixelShaderCubes -Fd Shaders\PDB\PixelShaderCubes.pdb -Fh Shaders\PixelShaderCubes.hlsl.h
+dxc PixelShaderEnvironmentMap.hlsl -E main -T ps_6_7 -Zi -Vn g_PixelShaderEnvironmentMap -Fd Shaders\PDB\PixelShaderEnvironmentMap.pdb -Fh Shaders\PixelShaderEnvironmentMap.hlsl.h
+dxc PixelShaderFxaa.hlsl -E main -T ps_6_7 -Zi -Vn g_PixelShaderFxaa -Fd Shaders\PDB\PixelShaderFxaa.pdb -Fh Shaders\PixelShaderFxaa.hlsl.h
+dxc PixelShaderMesh.hlsl -E main -T ps_6_7 -Zi -Vn g_PixelShaderMesh -Fd Shaders\PDB\PixelShaderMesh.pdb -Fh Shaders\PixelShaderMesh.hlsl.h
+dxc RaytracingShaderAO.hlsl -T lib_6_7 -Zi -Vn g_RaytracingShaderAO -Fd Shaders\PDB\RaytracingShaderAO.pdb -Fh Shaders\RaytracingShaderAO.hlsl.h -disable-payload-qualifiers
+dxc RaytracingShaderColor.hlsl -T lib_6_7 -Zi -Vn g_RaytracingShaderColor -Fd Shaders\PDB\RaytracingShaderColor.pdb -Fh Shaders\RaytracingShaderColor.hlsl.h -disable-payload-qualifiers
+dxc RaytracingShaderShadows.hlsl -T lib_6_7 -Zi -Vn g_RaytracingShaderShadows -Fd Shaders\PDB\RaytracingShaderShadows.pdb -Fh Shaders\RaytracingShaderShadows.hlsl.h -disable-payload-qualifiers
+dxc VertexShaderCubes.hlsl -E main -T vs_6_7 -Zi -Vn g_VertexShaderCubes -Fd Shaders\PDB\VertexShaderCubes.pdb -Fh Shaders\VertexShaderCubes.hlsl.h
+dxc VertexShaderEnvironmentMap.hlsl -E main -T vs_6_7 -Zi -Vn g_VertexShaderEnvironmentMap -Fd Shaders\PDB\VertexShaderEnvironmentMap.pdb -Fh Shaders\VertexShaderEnvironmentMap.hlsl.h
+dxc VertexShaderFullscreenQuad.hlsl -E main -T vs_6_7 -Zi -Vn g_VertexShaderFullscreenQuad -Fd Shaders\PDB\VertexShaderFullscreenQuad.pdb -Fh Shaders\VertexShaderFullscreenQuad.hlsl.h
+dxc VertexShaderMesh.hlsl -E main -T vs_6_7 -Zi -Vn g_VertexShaderMesh -Fd Shaders\PDB\VertexShaderMesh.pdb -Fh Shaders\VertexShaderMesh.hlsl.h

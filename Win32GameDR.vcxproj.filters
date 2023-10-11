@@ -1,0 +1,320 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>a66fc8a4-227f-459f-9377-1471c8f9222b</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files">
+      <UniqueIdentifier>{a2edc1de-18da-4ed5-98fd-8a87ee0113c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{448cf5d2-ed0d-436a-9808-1f4f8fb55837}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>c6b0dc04-3d2b-4ecf-8aab-eaf95f6ff0da</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dds;dlg;fbx;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Directx">
+      <UniqueIdentifier>{b1c21716-b084-4f81-8026-cd796bdbfc82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dxguids">
+      <UniqueIdentifier>{08255157-b14e-4123-b146-df10c0972bf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scene Class">
+      <UniqueIdentifier>{b1ef1836-71f7-4148-927e-3e6c1518b13d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game Class">
+      <UniqueIdentifier>{58090ef6-750b-4b70-b21b-7754d6b3018c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene Class">
+      <UniqueIdentifier>{52c6a7cf-9b99-4ba1-87f3-f8002c0c8afa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StepTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectXRaytracingHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXSampleHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RaytracingHlslCompat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SDKMESHModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3d12.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3d12compatibility.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3d12sdklayers.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3d12shader.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\D3D12TokenizedProgramFormat.hpp">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3d12video.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dcommon.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_barriers.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_check_feature_support.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_core.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_default.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_pipeline_state_stream.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_property_format_table.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_render_pass.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_resource_helpers.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_root_signature.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\d3dx12_state_object.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\dxcore.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\dxcore_interface.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\dxgicommon.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx\dxgiformat.h">
+      <Filter>Header Files\Directx</Filter>
+    </ClInclude>
+    <ClInclude Include="Dxguids\dxguids.h">
+      <Filter>Header Files\Dxguids</Filter>
+    </ClInclude>
+    <ClInclude Include="FBXModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionStructs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationStructs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NameSpacedEnums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Header Files\Scene Class</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneMain.h">
+      <Filter>Header Files\Scene Class</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneRaytraced.h">
+      <Filter>Header Files\Scene Class</Filter>
+    </ClInclude>
+    <ClInclude Include="OcclusionManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DeviceResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SDKMESHModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Game_Core.cpp">
+      <Filter>Source Files\Game Class</Filter>
+    </ClCompile>
+    <ClCompile Include="Game_DXR_Resources.cpp">
+      <Filter>Source Files\Game Class</Filter>
+    </ClCompile>
+    <ClCompile Include="FBXModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Game_Collision.cpp">
+      <Filter>Source Files\Game Class</Filter>
+    </ClCompile>
+    <ClCompile Include="Game_Postprocess.cpp">
+      <Filter>Source Files\Game Class</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Source Files\Scene Class</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneMain.cpp">
+      <Filter>Source Files\Scene Class</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneRaytraced.cpp">
+      <Filter>Source Files\Scene Class</Filter>
+    </ClCompile>
+    <ClCompile Include="OcclusionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="directx.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="settings.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common.hlsli">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="HlslCompat.hlsli">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="CommonPBR.hlsli">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Fxaa3_11.hlsli">
+      <Filter>Shader Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShaderCubes.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShaderCubes.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderColor.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShaderEnvironmentMap.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexShaderEnvironmentMap.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderAO.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderAOBlurHorz.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderAOBlurVert.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexShaderMesh.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShaderMesh.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderSkinning.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShaderFxaa.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexShaderFullscreenQuad.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderFinalPostProcess.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderShadows.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderShadowBlurHorz.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeShaderShadowBlurVert.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderAO_PAQ.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderColor_PAQ.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="RaytracingShaderShadows_PAQ.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Directx\d3d12.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\d3d12compatibility.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\d3d12sdklayers.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\d3d12video.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\d3dcommon.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\dxgicommon.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+    <Midl Include="Directx\dxgiformat.idl">
+      <Filter>Header Files\Directx</Filter>
+    </Midl>
+  </ItemGroup>
+</Project>

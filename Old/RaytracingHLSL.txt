@@ -1,0 +1,596 @@
+//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
+
+#ifndef RAYTRACING_HLSL
+#define RAYTRACING_HLSL
+
+#define HLSL
+#include "RaytracingHlslCompat.h"
+#include "Common.hlsli"
+
+RaytracingAccelerationStructure Scene : register(t0);
+//RWTexture2D<float4> gOutput : register(u0);
+//StructuredBuffer<Vertex> Vertices : register(t1);
+//ByteAddressBuffer Indices : register(t2);
+//StructuredBuffer<VertexPlane> PlaneVertices : register(t3);
+//ByteAddressBuffer PlaneIndices : register(t4);
+//Texture2D PlaneDiffuseMap : register(t5);
+
+ConstantBuffer<FrameConstants>  frameCB : register(b0);
+ConstantBuffer<ObjectConstants> objectCB : register(b1);
+
+SamplerState AnisoWrap : register(s0);
+SamplerState LinearClamp : register(s1);
+
+// declare global variables as static in HLSL
+//static uint currentRecursionDepth;
+
+//***************************************************************************
+//*****------ TraceRay wrappers for radiance and shadow rays. -------********
+//***************************************************************************
+
+// Trace a radiance ray into the scene and returns a shaded color.
+float4 TraceRadianceRay(in Ray ray, in UINT currentRayRecursionDepth)
+{
+	if (currentRayRecursionDepth >= MAX_RAY_RECURSION_DEPTH)
+	{
+		return float4(0, 0, 0, 0);
+	}
+
+	// Set the ray's extents.
+	RayDesc rayDesc;
+	rayDesc.Origin = ray.origin;
+	rayDesc.Direction = ray.direction;
+	// Set TMin to a zero value to avoid aliasing artifacts along contact areas.
+	// Note: make sure to enable face culling so as to avoid surface face fighting.
+	rayDesc.TMin = 0;
+	rayDesc.TMax = 10000;
+	RayPayload rayPayload = { float4(0, 0, 0, 0), currentRayRecursionDepth + 1 };
+	TraceRay(Scene, //g_scene,
+		RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+		0xFF, //TraceRayParameters::InstanceMask,
+		0, //TraceRayParameters::HitGroup::Offset[RayType::Radiance],
+		0, //TraceRayParameters::HitGroup::GeometryStride,
+		0, //TraceRayParameters::MissShader::Offset[RayType::Radiance],
+		rayDesc, rayPayload);
+
+	return rayPayload.color;
+}
+
+// Trace a shadow ray and return true if it hits any geometry.
+bool TraceShadowRayAndReportIfHit(in Ray ray, in UINT currentRayRecursionDepth)
+{
+	if (currentRayRecursionDepth >= MAX_RAY_RECURSION_DEPTH)
+	{
+		return false;
+	}
+
+	// Set the ray's extents.
+	RayDesc rayDesc;
+	rayDesc.Origin = ray.origin;
+	rayDesc.Direction = ray.direction;
+	// Set TMin to a zero value to avoid aliasing artifcats along contact areas.
+	// Note: make sure to enable back-face culling so as to avoid surface face fighting.
+	rayDesc.TMin = 0;
+	rayDesc.TMax = 10000;
+
+	// Initialize shadow ray payload.
+	// Set the initial value to true since closest and any hit shaders are skipped. 
+	// Shadow miss shader, if called, will set it to false.
+	ShadowRayPayload shadowPayload = { true };
+	TraceRay(Scene, //g_scene,
+		RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+		| RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+		| RAY_FLAG_FORCE_OPAQUE             // ~skip any hit shaders
+		| RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // ~skip closest hit shaders,
+		0xFF, //TraceRayParameters::InstanceMask,
+		1, //TraceRayParameters::HitGroup::Offset[RayType::Shadow],
+		2, //TraceRayParameters::HitGroup::GeometryStride,
+		1, //TraceRayParameters::MissShader::Offset[RayType::Shadow],
+		rayDesc, shadowPayload);
+
+	return shadowPayload.hit;
+}
+
+[shader("raygeneration")]
+void MyRaygenShader()
+{
+	// Get the location within the dispatched 2D grid of work items
+	// (often maps to pixels, so this could represent a pixel coordinate).
+	uint2 launchIndex = DispatchRaysIndex().xy; // get screen pixel coords
+	//float2 dims = DispatchRaysDimensions().xy; // get screen pixel dimensions
+	//float2 d = (launchIndex.xy + 0.5f) / dims.xy * 2.f - 1.f; // calculate screen space coords
+
+	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	//GenerateCameraRay(DispatchRaysIndex().xy, origin, rayDir);
+	Ray ray = GenerateCameraRay(launchIndex, frameCB.cameraPos.xyz, frameCB.invViewProj);
+
+	// Cast a ray into the scene and retrieve a shaded color.
+	UINT currentRecursionDepth = 0;
+	float4 color = TraceRadianceRay(ray, currentRecursionDepth);
+
+	/*
+	// Set the ray's extents.
+	RayDesc rayDesc;
+	rayDesc.Origin = ray.origin;
+	rayDesc.Direction = ray.direction;
+	//ray.Origin = float3(d.x, -d.y, -1);	// +y points down in screen space
+	//ray.Direction = float3(0, 0, 1);	// +z points into screen in post-projection space
+	rayDesc.TMin = 0;// 0.001;
+	rayDesc.TMax = 10000;
+
+	// Initialize the ray payload
+	RayPayload payload = { float4(0, 0, 0, 0), currentRecursionDepth + 1 };
+	//payload.colorAndDistance = float4(0.9, 0.6, 0.2, 1);
+	//payload.colorAndDistance = float4(0, 0, 0, 0);
+
+	// Trace the ray
+	TraceRay(
+		// Parameter name: AccelerationStructure
+		Scene,
+		// Parameter name: RayFlags
+		// Flags can be used to specify the behavior upon hitting a surface.
+		// We are using a RH coordinate system, which reverses the triangle facing direction expected by DXR.
+		// NB: We are overriding this flag in the application.
+		RAY_FLAG_NONE,// RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+		// Parameter name: InstanceInclusionMask
+		// Instance inclusion mask, which can be used to mask out some geometry to this ray by
+		// and-ing the mask with a geometry mask. The 0xFF flag then indicates no geometry will be masked.
+		0xFF,//~0,
+		// Parameter name: RayContributionToHitGroupIndex
+		// Depending on the type of ray, a given object can have several hit groups attached
+		// (ie. what to do when hitting to compute regular shading, and what to do when hitting
+		// to compute shadows). Those hit groups are specified sequentially in the SBT, so the value
+		// below indicates which offset (on 4 bits) to apply to the hit groups for this ray. In this
+		// sample we only have one hit group per object, hence an offset of 0.
+		0,
+		// Parameter name: MultiplierForGeometryContributionToHitGroupIndex
+		// The offsets in the SBT can be computed from the object ID, its instance ID, but also simply
+		// by the order the objects have been pushed in the acceleration structure. This allows the
+		// application to group shaders in the SBT in the same order as they are added in the AS, in
+		// which case the value below represents the stride (4 bits representing the number of hit
+		// groups) between two consecutive objects.
+		0,// 1,
+		// // Parameter name: MissShaderIndex
+		// Index of the miss shader to use in case several consecutive miss shaders are present in the
+		// SBT. This allows to change the behavior of the program when no geometry have been hit, for
+		// example one to return a sky color for regular rendering, and another returning a full
+		// visibility value for shadow rays. This sample has only one miss shader, hence an index 0.
+		0,
+		// Parameter name: Ray
+		// Ray information to trace.
+		rayDesc,
+		// Parameter name: Payload
+		// Payload associated to the ray, which will be used to communicate between the hit/miss
+		// shaders and the raygen.
+		payload);
+	*/
+
+	float3 finalColor = RemoveSRGBCurve(color.rgb);
+
+	RWTexture2D<float4> Output = ResourceDescriptorHeap[SrvUavDescriptors::DxrUav];
+	Output[launchIndex] = float4(finalColor, 1 /*color.a*/ );
+	//gOutput[launchIndex] = float4(payload.colorAndDistance.rgb, 1.f);
+}
+
+[shader("closesthit")]
+void MyClosestHitShader(inout RayPayload rayPayload, Attributes attr)
+//void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
+{
+	// Get the base index of the triangle's first 16 bit index.
+	uint indexSizeInBytes = 2;
+	uint indicesPerTriangle = 3;
+	uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+	uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+
+	ByteAddressBuffer Indices = ResourceDescriptorHeap[SrvUavDescriptors::IndexBufferSrv];
+	StructuredBuffer<Vertex> Vertices = ResourceDescriptorHeap[SrvUavDescriptors::VertexBufferSrv];
+
+	// Load up 3 16 bit indices for the triangle.
+	//const uint3 indices = Load3x16BitIndices(baseIndex);
+	const uint3 indices = Load3x16BitIndices(baseIndex, Indices);
+
+	//float4 firstVertexColor = float4(0, 0, 0, 0);
+	//
+	//// Use DXR provided InstanceID() to determine color for first vertex.
+	//switch (InstanceID())
+	//{
+	//case 0:
+	//	firstVertexColor = float4(1, 0, 0, 1); // red
+	//	break;
+	//case 1:
+	//	firstVertexColor = float4(0, 1, 0, 1); // green
+	//	break;
+	//case 2:
+	//	firstVertexColor = float4(0, 0, 1, 1); // blue
+	//	break;
+	//}
+
+	// Retrieve corresponding vertex normals for the triangle vertices.
+	float3 vertexNormals[3] = {
+		//firstVertexColor,
+		Vertices[indices[0]].normal,
+		Vertices[indices[1]].normal,
+		Vertices[indices[2]].normal,
+	};
+
+	// PERFORMANCE TIP: it is recommended to avoid values carry over across TraceRay() calls. 
+	// Therefore, in cases like retrieving HitWorldPosition(), it is recomputed every time.
+
+	// Shadow component.
+	// Trace a shadow ray.
+	float3 hitPosition = HitWorldPosition();
+	Ray shadowRay = { hitPosition, -frameCB.lightDir };
+	//Ray shadowRay = { hitPosition, normalize(g_sceneCB.lightPosition.xyz - hitPosition) };
+	bool shadowRayHit = TraceShadowRayAndReportIfHit(shadowRay, rayPayload.recursionDepth);
+
+	/*
+	// Set the ray's extents.
+	RayDesc rayDesc;
+	rayDesc.Origin = shadowRay.origin;
+	rayDesc.Direction = shadowRay.direction;
+	// Set TMin to a zero value to avoid aliasing artifacts along contact areas.
+	// Note: make sure to enable back-face culling so as to avoid surface face fighting.
+	rayDesc.TMin = 0;
+	rayDesc.TMax = 10000;
+
+	// Initialize shadow ray payload.
+	// Set the initial value to true since closest and any hit shaders are skipped. 
+	// Shadow miss shader, if called, will set it to false.
+	ShadowRayPayload shadowPayload = { true };
+	if (payload.recursionDepth >= MAX_RAY_RECURSION_DEPTH)
+		shadowPayload.hit = false;
+	else
+		TraceRay(Scene,
+			RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+			| RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+			| RAY_FLAG_FORCE_OPAQUE             // ~skip any hit shaders
+			| RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // ~skip closest hit shaders,
+			0xFF,//TraceRayParameters::InstanceMask,
+			1,//TraceRayParameters::HitGroup::Offset[RayType::Shadow],
+			2,// InstanceID(),//TraceRayParameters::HitGroup::GeometryStride,
+			1,//TraceRayParameters::MissShader::Offset[RayType::Shadow],
+			rayDesc,
+			shadowPayload);
+
+	//bool shadowRayHit = TraceShadowRayAndReportIfHit(shadowRay, rayPayload.recursionDepth);
+	bool shadowRayHit = shadowPayload.hit;
+	*/
+
+	// Vertex normal directions per triangle are identical, so no interpolation required.
+	float3 normalW = mul(vertexNormals[0],(float3x3)ObjectToWorld4x3());
+
+	// Directional light shading.
+	float NdotL = dot(-frameCB.lightDir, normalW); // negate light direction
+	float3 diffuseColor = shadowRayHit ? float3(0,0,0) : frameCB.lightDiffuse.rgb * saturate(NdotL);
+	//float3 diffuseColor = frameCB.lightDiffuse.rgb * saturate(NdotL);// *objectCB.diffuse.rgb;
+	float3 hitColor = objectCB.albedo.rgb * (diffuseColor + frameCB.lightAmbient.rgb);  // tints ambient light with object diffuse color
+	//float3 hitColor = objectCB.diffuse.rgb * (diffuseColor + frameCB.lightAmbient.rgb);  // tints ambient light with object diffuse color
+
+	//float3 hitColor = mul(vertexNormals[0],(float3x3)ObjectToWorld4x3()); // must use ObjectToWorld4x3() intrinsic instead of ObjectToWorld3x4()
+	//float3 barycentrics = float3(1 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+	//float3 hitColor = vertexColors[0].rgb * barycentrics.x + vertexColors[1].rgb * barycentrics.y + vertexColors[2].rgb * barycentrics.z;
+
+	//hitColor = hitColor * materialCB.diffuse.rgb;
+
+	// Alternative calculation for hit position color (same result).
+	//float3 hitColor = vertexColors[0].rgb +
+	//	attr.barycentrics.x * (vertexColors[1].rgb - vertexColors[0].rgb) +
+	//	attr.barycentrics.y * (vertexColors[2].rgb - vertexColors[0].rgb);
+
+	rayPayload.color = float4(hitColor, objectCB.albedo.a);
+	//rayPayload.color = float4(hitColor, objectCB.diffuse.a);
+	//payload.colorAndDistance = float4(hitColor, 1);
+	//payload.colorAndDistance = float4(barycentrics, 1);
+	//payload.colorAndDistance = float4(1, 1, 0, RayTCurrent());
+}
+
+[shader("closesthit")]
+void MyClosestHitPlaneShader(inout RayPayload rayPayload, Attributes attr)
+//void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
+{
+	// Get the base index of the triangle's first 16 bit index.
+	uint indexSizeInBytes = 2;
+	uint indicesPerTriangle = 3;
+	uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+	uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+
+	ByteAddressBuffer PlaneIndices = ResourceDescriptorHeap[SrvUavDescriptors::PlaneIndexBufferSrv];
+
+	// Load up 3 16 bit indices for the triangle.
+	//const uint3 indices = Load3x16BitIndices(baseIndex);
+	const uint3 indices = Load3x16BitIndices(baseIndex, PlaneIndices);
+
+	StructuredBuffer<VertexPlane> PlaneVertices = ResourceDescriptorHeap[SrvUavDescriptors::PlaneVertexBufferSrv];
+
+	// Retrieve corresponding vertex positions for the triangle vertices.
+	float3 vertexPositions[3] = {
+		PlaneVertices[indices[0]].position,
+		PlaneVertices[indices[1]].position,
+		PlaneVertices[indices[2]].position,
+	};
+
+	// Retrieve corresponding vertex normals for the triangle vertices.
+	float3 vertexNormals[3] = {
+		//firstVertexColor,
+		PlaneVertices[indices[0]].normal,
+		PlaneVertices[indices[1]].normal,
+		PlaneVertices[indices[2]].normal,
+	};
+
+	// Retrieve corresponding texcoords for the triangle vertices.
+	float2 vertexTexCoords[3] = {
+		PlaneVertices[indices[0]].texCoord,
+		PlaneVertices[indices[1]].texCoord,
+		PlaneVertices[indices[2]].texCoord,
+	};
+
+	//---------------------------------------------------------------------------------------------
+	// Compute partial derivatives of UV coordinates:
+	//
+	//  1) Construct a plane from the hit triangle
+	//  2) Intersect two helper rays with the plane:  one to the right and one down
+	//  3) Compute barycentric coordinates of the two hit points
+	//  4) Reconstruct the UV coordinates at the hit points
+	//  5) Take the difference in UV coordinates as the partial derivatives X and Y
+
+	// Compute the triangle's normal.
+	// This is redundant and done for illustration purposes 
+	// as all the per-vertex normals are the same and match triangle's normal in this sample. 
+	//float3 triangleNormal = HitAttribute(vertexNormals, attr);
+
+	// Normal for plane
+	float3 triangleNormal = normalize(cross(vertexPositions[2] - vertexPositions[0], vertexPositions[1] - vertexPositions[0]));
+
+	// Shadow component.
+	// Trace a shadow ray.
+
+	// Hit world position
+	float3 hitPosition = HitWorldPosition();
+
+	Ray shadowRay = { hitPosition, -frameCB.lightDir };
+	//Ray shadowRay = { hitPosition, normalize(g_sceneCB.lightPosition.xyz - hitPosition) };
+	bool shadowRayHit = TraceShadowRayAndReportIfHit(shadowRay, rayPayload.recursionDepth);
+
+	/*
+	// Set the ray's extents.
+	RayDesc rayDesc;
+	rayDesc.Origin = shadowRay.origin;
+	//rayDesc.Direction = normalize(lightPos - hitPosition);// ray.direction;
+	rayDesc.Direction = shadowRay.direction;
+	// Set TMin to a zero value to avoid aliasing artifacts along contact areas.
+	// Note: make sure to enable back-face culling so as to avoid surface face fighting.
+	rayDesc.TMin = 0;
+	rayDesc.TMax = 10000;
+
+	// Initialize shadow ray payload.
+	// Set the initial value to true since closest and any hit shaders are skipped. 
+	// Shadow miss shader, if called, will set it to false.
+	ShadowRayPayload shadowPayload = { true };
+	if (payload.recursionDepth >= MAX_RAY_RECURSION_DEPTH)
+		shadowPayload.hit = false;
+	else
+	{
+		TraceRay(Scene,
+			RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+			| RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+			| RAY_FLAG_FORCE_OPAQUE             // ~skip any hit shaders
+			| RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // ~skip closest hit shaders,
+			0xFF,//TraceRayParameters::InstanceMask,
+			1,//TraceRayParameters::HitGroup::Offset[RayType::Shadow],
+			2,// InstanceID(),//TraceRayParameters::HitGroup::GeometryStride,
+			1,//TraceRayParameters::MissShader::Offset[RayType::Shadow],
+			rayDesc, shadowPayload);
+	}
+
+	//bool shadowRayHit = TraceShadowRayAndReportIfHit(shadowRay, rayPayload.recursionDepth);
+	bool shadowRayHit = shadowPayload.hit;
+	*/
+
+	// Vertex normal directions per triangle are identical, so no interpolation required.
+	float3 normalW = vertexNormals[0]; // plane is untransformed
+
+	// Reflected component.
+	float4 reflectedColor = float4(0, 0, 0, 0);
+	if (objectCB.reflectanceCoef > 0.001f)
+	{
+		// Trace a reflection ray.
+		Ray reflectionRay = { hitPosition, reflect(WorldRayDirection(), normalW) };
+		float4 reflectionColor = TraceRadianceRay(reflectionRay, rayPayload.recursionDepth);
+
+		float3 fresnelR = FresnelReflectanceSchlick(WorldRayDirection(), normalW, objectCB.albedo.xyz);
+		reflectedColor = objectCB.reflectanceCoef * float4(fresnelR, 1) * reflectionColor;
+	}
+
+	/*
+	// Set the ray's extents.
+	RayDesc reflectRayDesc;
+	reflectRayDesc.Origin = reflectRay.origin;
+	reflectRayDesc.Direction = reflectRay.direction;
+	reflectRayDesc.TMin = 0;// 0.001;
+	reflectRayDesc.TMax = 10000;
+
+	//currentRecursionDepth++;
+
+	// Initialize the ray payload
+	RayPayload reflectPayload = { float4(0, 0, 0, 0), rayPayload.recursionDepth + 1 };
+	if (reflectPayload.recursionDepth < MAX_RAY_RECURSION_DEPTH)
+		// Trace the ray
+		TraceRay(
+			Scene,
+			RAY_FLAG_CULL_BACK_FACING_TRIANGLES, // RAY_FLAG_NONE crashes the app
+			0xFF,//~0,
+			0,
+			0,// 1,
+			0,
+			reflectRayDesc,
+			reflectPayload);
+
+	float3 reflectColor = reflectPayload.color.rgb;
+	*/
+
+	// Sample the material texture.
+	// Helper rays
+	uint2 threadID = DispatchRaysIndex().xy;
+	Ray ddx = GenerateCameraRay(uint2(threadID.x + 1, threadID.y), frameCB.cameraPos.xyz, frameCB.invViewProj);
+	Ray ddy = GenerateCameraRay(uint2(threadID.x, threadID.y + 1), frameCB.cameraPos.xyz, frameCB.invViewProj);
+
+	// Intersect helper rays
+	float3 xOffsetPoint = RayPlaneIntersection(hitPosition, triangleNormal, ddx);
+	float3 yOffsetPoint = RayPlaneIntersection(hitPosition, triangleNormal, ddy);
+
+	// Compute barycentrics 
+	float3 baryX = BarycentricCoordinates(xOffsetPoint, vertexPositions[0], vertexPositions[1], vertexPositions[2]);
+	float3 baryY = BarycentricCoordinates(yOffsetPoint, vertexPositions[0], vertexPositions[1], vertexPositions[2]);
+
+	float2 uv = HitAttribute(vertexTexCoords, attr);
+	//int2 uvScaled = floor(texCoord * 1024.f);
+
+	// Compute UVs and take the difference
+	float3x2 uvMatrix = float3x2(vertexTexCoords);
+	float2 ddxUV = mul(baryX, uvMatrix) - uv;
+	float2 ddyUV = mul(baryY, uvMatrix) - uv;
+
+	Texture2D DiffuseMap = ResourceDescriptorHeap[SrvUavDescriptors::TreeDiffuseSrv]; // introduced in SM6.6
+
+	float4 texColor = DiffuseMap.SampleGrad(AnisoWrap, uv, ddxUV, ddyUV);
+	//float3 texColor = PlaneDiffuseMap.SampleLevel(AnisoWrap, uv, 0.f).rgb;
+	//float3 texColor = PlaneDiffuseMap.Load(int3(uvScaled, 0)).rgb;
+
+	// Calculate final color.
+	float4 phongColor = CalculatePhongLighting(objectCB.albedo, normalW, shadowRayHit,
+		frameCB.lightDir, frameCB.lightDiffuse, frameCB.lightAmbient,
+		objectCB.diffuseCoef, objectCB.specularCoef, objectCB.specularPower);
+	float4 color = texColor * (phongColor + reflectedColor);
+
+	// Directional light shading.
+	//float NdotL = dot(-frameCB.lightDir, normalW); // negate light direction
+	//float3 diffuseColor = shadowRayHit ? float3(0, 0, 0) : frameCB.lightDiffuse.rgb * saturate(NdotL);
+	//float3 hitColor = (texColor.rgb + reflectedColor.rgb) * (diffuseColor + frameCB.lightAmbient.rgb);  // tints ambient light with object diffuse color
+
+	//float3 dirColor = frameCB.lightDiffuse.rgb * saturate(NdotL);// *objectCB.diffuse.rgb;
+	//float3 hitColor = (objectCB.diffuse.rgb + reflectColor) * (diffuseColor + frameCB.lightAmbient.rgb);  // tints ambient light with object diffuse color
+	//float3 hitColor = objectCB.diffuse.rgb * (diffuseColor + frameCB.lightAmbient.rgb);  // tints ambient light with object diffuse color
+
+	//float3 hitColor = vertexNormals[0];
+	//float3 barycentrics = float3(1 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+	//float3 hitColor = vertexColors[0].rgb * barycentrics.x + vertexColors[1].rgb * barycentrics.y + vertexColors[2].rgb * barycentrics.z;
+	
+	//hitColor = hitColor * materialCB.diffuse.rgb;
+
+	// Alternative calculation for hit position color (same result).
+	//float3 hitColor = vertexColors[0].rgb +
+	//	attr.barycentrics.x * (vertexColors[1].rgb - vertexColors[0].rgb) +
+	//	attr.barycentrics.y * (vertexColors[2].rgb - vertexColors[0].rgb);
+
+	rayPayload.color = color;
+	//rayPayload.color = float4(hitColor, texColor.a);
+	//payload.colorAndDistance = float4(hitColor, objectCB.diffuse.a);
+	//payload.colorAndDistance = float4(hitColor, 1);
+	//payload.colorAndDistance = float4(barycentrics, 1);
+	//payload.colorAndDistance = float4(1, 1, 0, RayTCurrent());
+}
+
+//***************************************************************************
+//*****************------ Any hit shaders-------************************
+//***************************************************************************
+
+// NB: Any hit shaders will be ignored if D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE flag is set in the application,
+// unless overriden by D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE, or ray flag RAY_FLAG_FORCE_NON_OPAQUE.
+[shader("anyhit")]
+void MyAnyHitShader(inout RayPayload payload, Attributes attr)
+{
+	// To do
+}
+
+[shader("anyhit")]
+void MyAnyHitPlaneShader(inout RayPayload payload, Attributes attr)
+{
+	// To do
+	// Get the base index of the triangle's first 16 bit index.
+	uint indexSizeInBytes = 2;
+	uint indicesPerTriangle = 3;
+	uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+	uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+
+	ByteAddressBuffer PlaneIndices = ResourceDescriptorHeap[SrvUavDescriptors::PlaneIndexBufferSrv];
+
+	// Load up 3 16 bit indices for the triangle.
+	//const uint3 indices = Load3x16BitIndices(baseIndex);
+	const uint3 indices = Load3x16BitIndices(baseIndex, PlaneIndices);
+
+	StructuredBuffer<VertexPlane> PlaneVertices = ResourceDescriptorHeap[SrvUavDescriptors::PlaneVertexBufferSrv];
+
+	// Retrieve corresponding vertex positions for the triangle vertices.
+	float3 vertexPositions[3] = {
+		PlaneVertices[indices[0]].position,
+		PlaneVertices[indices[1]].position,
+		PlaneVertices[indices[2]].position,
+	};
+
+	// Retrieve corresponding vertex normals for the triangle vertices.
+	float3 vertexNormals[3] = {
+		//firstVertexColor,
+		PlaneVertices[indices[0]].normal,
+		PlaneVertices[indices[1]].normal,
+		PlaneVertices[indices[2]].normal,
+	};
+
+	// Retrieve corresponding texcoords for the triangle vertices.
+	float2 vertexTexCoords[3] = {
+		PlaneVertices[indices[0]].texCoord,
+		PlaneVertices[indices[1]].texCoord,
+		PlaneVertices[indices[2]].texCoord,
+	};
+
+
+	Texture2D DiffuseMap = ResourceDescriptorHeap[SrvUavDescriptors::TreeDiffuseSrv]; // introduced in SM6.6
+	float2 uv = HitAttribute(vertexTexCoords, attr);
+	//float4 texColor = DiffuseMap.SampleGrad(AnisoWrap, uv, ddxUV, ddyUV);
+	float4 texColor = DiffuseMap.SampleLevel(AnisoWrap, uv, 0.f);
+
+	if (texColor.a < 0.1f)
+		IgnoreHit();
+}
+
+//***************************************************************************
+//**********************------ Miss shaders -------**************************
+//***************************************************************************
+
+[shader("miss")]
+void MyMissShader(inout RayPayload payload)
+//void MyMissShader(inout RayPayload payload : SV_RayPayload)
+{
+	const float3 rayDir = WorldRayDirection();
+
+	TextureCube CubeMap = ResourceDescriptorHeap[SrvUavDescriptors::CubeMapSrv];
+	payload.color = CubeMap.SampleLevel(LinearClamp, rayDir, 0);
+
+	// To slightly differentiate the raster and the raytracing, we will add a simple ramp color background by
+	// modifying the `Miss` function: we simply obtain the
+	// coordinates of the currently rendered pixel and use them to compute a linear gradient :
+	//uint2 launchIndex = DispatchRaysIndex().xy;
+	//float2 dims = DispatchRaysDimensions().xy;
+	//float ramp = launchIndex.y / dims.y;
+	//payload.color = float4(0.f, 0.2f, 0.7f - 0.3f * ramp, -1.f);
+	
+	//payload.colorAndDistance = float4(0.2f, 0.2f, 0.8f, -1);
+	//payload.color = float4(0, 0, 0, 1);
+}
+
+[shader("miss")]
+void MyMissShader_ShadowRay(inout ShadowRayPayload payload)
+//void MyMissShader_ShadowRay(inout ShadowRayPayload payload : SV_RayPayload)
+{
+	payload.hit = false;
+}
+
+#endif // RAYTRACING_HLSL

@@ -1,0 +1,61 @@
+----------------------------
+DIRECTXTK GAME PROJECT NOTES
+----------------------------
+
+Linked libraries
+----------------
+Must include: d3d12.lib;dxgi.lib;dxguid.lib in Linker->Additional Dependencies or in source code header file:
+
+// Link necessary d3d12 libraries.
+#pragma comment(lib, "D3D12.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib,"dxguid.lib")
+
+External static & dynamic libs
+------------------------------
+Added to Linker->Additional Dependencies:
+//ASSIMP-VC142-MTD.LIB (required for compile-time linking)
+//ASSIMP-VC142-MTD.DLL (required for run-time linking and was copied to "C:\Windows\System32" folder)
+
+Project setup
+-------------
+Set DPI scaling for windowed application in:
+Project Properties->Manifest Tool->Input/Output: High DPI Aware
+Project Properties->C/C++->Precompiled Headers->Precompiled Header: Create (/Yc)
+Project Properties->C/C++->Precompiled Headers->Precompiled Header File: pch.h
+
+Disabled warnings
+-----------------
+Project Properties->C/C++->Advanced->Disable Specific Warnings:
+C26451 "arithmetic operator using operator on a 4 byte value"
+C26495 "structure is unitialized, always initialize structures"
+C26800 "use of a moved from object"
+C26812 "enum is unscoped, prefer enum class over enum"
+//C5246 "initialization of a subobject should be wrapped in braces"
+//C5256 "a non-defining declaration of an enumeration with a fixed underlying type"
+//C6340 "mismatch on sign... when some unsigned type is required in call to 'sprintf_s'"
+C6387 "could be '0': this does not adhere to the spec ... 'wcscpy_s'"
+
+Disabled C2102 ('&' requires l-value error) in:
+Project Properties->C/C++->Language->Conformance mode: No (/permissive)
+
+Project receives C6262 (Function uses 16384 bytes of stack: exceeds /analyze:stacksize<constant>. Consider moving some data to heap)
+//Project Properties->C/C++->Command Line->Additional Options: /analyze:stacksize18000
+To avoid this warning, stack commit size was is increased to 32768 (32kB) at:
+Project Properties->Linker->System->Stack Commit Size: 32768
+Project Properties->Linker->System->Enable Large Addresses: Yes(/LARGEADDRESSAWARE) also set.
+
+FBX SDK
+-------------
+
+Project Properties->C/C++->General->Additional Include Directories: $(SolutionDir)\DirectXTK12-may2022\Inc;C:\Program Files\Autodesk\FBX\FBX SDK\2020.2.1\include
+Project Properties->C/C++->Preprocessor->Preprocessor Definitions: FBXSDK_SHARED
+Project Properties->C/C++->Code Generation->Runtime Library: Multi-threaded Debug DLL (/MDd)
+Project Properties->Linker->General->Additional Library Directories: C:\Program Files\Autodesk\FBX\FBX SDK\2020.2.1\lib\vs2019\x64\debug
+Project Properties->Linker->Input->Ignore Specific Default Libraries: LIBCMT
+
+Executable requires libfbxsdk.dll to run.
+This DLL can be either:
+-copied to the output folder containing the EXE
+-copied to C:\Windows\System32
+This DLL must be included with the program if distributed.
