@@ -1,4 +1,3 @@
-# Win32GameDR
 Shaders in the application are embedded as precompiled headers.
 
 All shaders target Shader Model 6.7 and are compiled offline with DXC compiler release version:
